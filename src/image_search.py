@@ -99,4 +99,4 @@ if __name__ == '__main__':
 	compare_histograms(args.target_path, args.collection_dir, args.outpath)
 
 # Test Command:
-# python compare_histograms.py ../data/img/flowers/image_0001.jpg ../data/img/flowers/
+# python image_search.py ../data/img/flowers/image_0001.jpg ../data/img/flowers/
