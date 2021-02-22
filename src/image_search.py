@@ -5,7 +5,8 @@ from pathlib import Path
 import argparse
 
 # make sure we only load valid image files
-def valid_image(file, target_name):
+# omitting target_name will just check for file extensions
+def valid_image(file, target_name = ''):
 	file = file.lower()
 	target_name = target_name.lower()
 
@@ -32,7 +33,7 @@ def color_histogram(image, normalize_function = cv2.NORM_MINMAX):
 	return normalized
 
 # main script
-def compare_histograms(target_path, collection_dir, outpath, comparison_function = cv2.HISTCMP_CHISQR):
+def compare_histograms(target_path, collection_dir, outpath, parallel = False):
 	# turns dir/image.jpg into...
 	target_name = os.path.split(target_path)[1] # image.jpg
 	target_basename = os.path.splitext(target_name)[0] # image
@@ -41,11 +42,12 @@ def compare_histograms(target_path, collection_dir, outpath, comparison_function
 	collection = [file for file in os.listdir(collection_dir) if valid_image(file, target_name)]
 
 	# just used for printing a progress bar
-	collection_len = len(collection)
-	print(f'There are {collection_len} images to compare with in this collection.')
+	if not parallel:
+		collection_len = len(collection)
+		print(f'There are {collection_len} images to compare with in this collection.')
 	
 	# create headers for the csv file
-	output = [('filename', 'distance')]
+	output = [('filename', 'CORREL', 'CHISQR', 'CHISQR_ALT', 'INTERSECT', 'BHATTACHARYYA', 'KL_DIV')]
 
 	# load target image and create histogram
 	target_image = cv2.imread(target_path)
@@ -59,29 +61,37 @@ def compare_histograms(target_path, collection_dir, outpath, comparison_function
 		comparison_image = cv2.imread(filepath)
 		comparison_hist = color_histogram(comparison_image)
 		
-		# this is the similarity value
-		dist = cv2.compareHist(target_hist, comparison_hist, comparison_function)
+		# this is the similarity values
+		correl = cv2.compareHist(target_hist, comparison_hist, cv2.HISTCMP_CORREL)
+		chisqr = cv2.compareHist(target_hist, comparison_hist, cv2.HISTCMP_CHISQR)
+		chisqr_alt = cv2.compareHist(target_hist, comparison_hist, cv2.HISTCMP_CHISQR_ALT)
+		intersect = cv2.compareHist(target_hist, comparison_hist, cv2.HISTCMP_INTERSECT)
+		bhat = cv2.compareHist(target_hist, comparison_hist, cv2.HISTCMP_BHATTACHARYYA)
+		kl_div = cv2.compareHist(target_hist, comparison_hist, cv2.HISTCMP_KL_DIV)
 		
 		# add to output list
-		output.append((file, round(dist, 2)))
+		output.append((file, round(correl, 2), round(chisqr, 2), round(chisqr_alt, 2), round(intersect, 2), round(bhat, 2), round(kl_div, 2)))
 
 		# print the actual progress for every 10%
-		if i % (collection_len // 10) == 0:
-			print(f'{int((i + 1) / (collection_len // 10) * 10)}% done')
+		if not parallel:
+			if i % (collection_len // 10) == 0:
+				print(f'{int((i + 1) / (collection_len // 10) * 10)}% done')
 
-	# Most similar image
-	similar = {
-		"name": '',
-		"distance": float('inf')
-	}
+	# # Most similar image --- does not work with several comp functions - should be reimplemented with sorting that takes into accoount whether high or low is good
+	# if not parallel:
+	# 	similar = {
+	# 		"name": '',
+	# 		"distance": float('inf')
+	# 	}
 
-	# loop through all output and keep adding the lowest value to the 'similar' dictionary
-	for comparison in output[1:]: # we slice away the headers
-		if comparison[1] < similar['distance']:
-			similar['name'] = comparison[0]
-			similar['distance'] = comparison[1]
+	# 	# loop through all output and keep adding the lowest value to the 'similar' dictionary
+	# 	for comparison in output[1:]: # we slice away the headers
+	# 		if comparison[1] < similar['distance']:
+	# 			similar['name'] = comparison[0]
+	# 			similar['distance'] = comparison[1]
 
-	print(f"The image most similar to {target_name} is {similar['name']} with a value of {similar['distance']}")
+	# if not parallel:
+	# 	print(f"The image most similar to {target_name} is {similar['name']} with a value of {similar['distance']}")
 
 	# write csv to the given path
 	outfile = os.path.join(outpath, f'{target_basename}.csv')
