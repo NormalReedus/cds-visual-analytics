@@ -2,8 +2,8 @@
 
 VENVNAME=cv101 
 
-python -m venv $VENVNAME
-source $VENVNAME/Scripts/activate
+python3 -m venv $VENVNAME
+source $VENVNAME/bin/activate
 pip install --upgrade pip
 
 # problems when installing from requirements.txt
