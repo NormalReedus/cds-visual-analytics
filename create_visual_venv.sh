@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-VENVNAME=network_venv
+VENVNAME=cv101
 
 python3 -m venv $VENVNAME
 source $VENVNAME/bin/activate
