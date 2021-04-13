@@ -177,7 +177,17 @@ trained_model = model.fit(train_img, train_label,
               verbose=1)
 
 #%%
-# Summarize
+# Save report
+predictions = model.predict(test_img, batch_size=32)
+report = classification_report(test_label.argmax(axis=1),
+                            predictions.argmax(axis=1),
+                            target_names=labels_alphabetized)
+
+with open(os.path.join('output', 'report.txt'), 'w') as file:
+    file.write(report)
+
+#%%
+# Save history       
 def plot_history(H, epochs):
     plt.style.use("fivethirtyeight")
     plt.figure()
@@ -190,7 +200,9 @@ def plot_history(H, epochs):
     plt.ylabel("Loss/Accuracy")
     plt.legend()
     plt.tight_layout()
+    plt.savefig(os.path.join('output', 'loss_and_accuracy.png'))
     plt.show()
 
 plot_history(trained_model, 20)
+
 # %%
